@@ -1,0 +1,178 @@
+dataContractSpecification: "0.9.3"
+id: "urn:dataproduct:investment-banking:investment-corporate-snapshot"
+
+info:
+  title: "Investment Corporate Snapshot"
+  version: "1.0"
+  status: "active"
+  description: |
+    Unified and cleaned dataset of corporate entities integrating internal bank client data
+    (CRM and accounting systems) with external market data sources (Cribis, Orbis).
+    The main value of the product is the technical standardization of financial statements
+    from local CAS accounting standards to globally comparable IFRS metrics.
+  owner: "Team 8 – Investment Banking"
+  contact:
+    name: "Head of Investment Banking (Data Product Owner)"
+    url: "<INTERNAL_CATALOG_OR_TEAM_CHANNEL_URL>"
+    email: "<DPO_EMAIL>@<BANK_DOMAIN>"
+
+servers:
+  production:
+    type: "bigquery"
+    project: "<GCP_PROJECT_OR_PLATFORM_PROJECT>"
+    dataset: "<BQ_DATASET_NAME>"
+    description: "Cloud Data Platform – Data Warehouse layer containing the corporate snapshot dataset."
+
+terms:
+  usage: |
+    Internal analytical dataset used as the foundational corporate data layer for
+    investment analysis, clustering models and credit risk scoring.
+  limitations: |
+    Data contains sensitive internal corporate information and must be accessed only
+    by authorized users with appropriate permissions.
+  noticePeriod: "P3M"
+
+servicelevels:
+  availability:
+    description: "99.5% uptime for read interfaces."
+  freshness:
+    description: "Daily ingestion after market close (EOD). Data available by 08:00 each business day."
+  latency:
+    description: "Batch processing pipeline executed once per day."
+
+models:
+
+  corporate_snapshot:
+    type: "table"
+    description: |
+      Denormalized gold layer table containing standardized corporate entity data
+      including identifiers, financial indicators and structural attributes.
+    fields:
+
+      company_id:
+        type: "text"
+        required: true
+        description: "Unique company identifier (IČO or LEI)."
+
+      company_name:
+        type: "text"
+        required: true
+        description: "Official registered company name."
+
+      nace_code:
+        type: "text"
+        required: true
+        description: "Industry classification according to NACE standard."
+
+      headquarters_country:
+        type: "text"
+        required: false
+        description: "Country of company headquarters."
+
+      owner_structure:
+        type: "text"
+        required: false
+        description: "Ownership structure of the company."
+
+      revenue:
+        type: "decimal"
+        required: false
+        description: "Total company revenue standardized to a common reporting currency."
+
+      profit:
+        type: "decimal"
+        required: false
+        description: "Profit metric derived from standardized financial statements."
+
+      ebitda:
+        type: "decimal"
+        required: false
+        description: "EBITDA value converted from CAS accounting standard to IFRS equivalent."
+
+      financial_year:
+        type: "integer"
+        required: true
+        description: "Fiscal year for which financial metrics apply."
+
+      data_source:
+        type: "text"
+        required: true
+        description: "Source indicator identifying whether the data originates from internal or external systems."
+
+      created_at:
+        type: "timestamp"
+        required: true
+        description: "Timestamp when the record was generated in the pipeline."
+
+    primaryKey:
+      - company_id
+      - financial_year
+
+
+quality:
+  description: |
+    Data quality validation rules ensuring the accuracy and completeness of corporate records
+    before publication to downstream analytical data products.
+  checks:
+
+    - model: corporate_snapshot
+      assertions:
+        - "row_count > 0"
+        - "not_null(company_id)"
+        - "unique(company_id, financial_year)"
+        - "not_null(nace_code)"
+        - "value_range(revenue, 0, )"
+
+x-data-product:
+
+  classification: "Source-aligned Data Product"
+
+  domain: "Investment Banking / Corporate Finance"
+
+  domainOwner: "Head of Investment Banking"
+
+  consumers:
+    - "Investment Banking Analytics Team"
+    - "Risk Management"
+
+  delivery:
+    platform: "Cloud Data Platform (Data Warehouse Layer)"
+    accessChannels:
+      - "JDBC / ODBC connectors"
+      - "REST API"
+    metadata: "Business Glossary – Dawiso"
+
+  lineage:
+
+    upstream:
+      - name: "Orbis"
+        type: "external-source"
+      - name: "Cribis"
+        type: "external-source"
+      - name: "Bank CRM"
+        type: "internal-system"
+      - name: "Bank Accounting Systems"
+        type: "internal-system"
+
+    downstream:
+      - name: "Investment Peer Benchmark Profile"
+        type: "data-product"
+      - name: "Credit Risk Customer Underwriting Profile"
+        type: "data-product"
+
+  governance:
+
+    classification: "Confidential"
+
+    pii_handling: |
+      Identification of statutory representatives (natural persons) may appear
+      in source systems. Such attributes must be masked for users without
+      appropriate need-to-know permissions.
+
+  retention:
+    description: "Financial history retained for the duration of mandate plus 5 years for regulatory purposes."
+
+  rules_ko:
+    - "Company must have active registration status in the business register."
+    - "Each record must contain a valid IČO or LEI identifier."
+    - "Revenue must not be negative; otherwise the pipeline is stopped."
