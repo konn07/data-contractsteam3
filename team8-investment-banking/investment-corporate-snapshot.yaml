@@ -8,7 +8,6 @@ info:
   status: active
   description: |
     Sjednocený dataset korporátních entit integrující interní data banky s externími zdroji.
-    Standardizace finančních výkazů z CAS na IFRS metriky.
     Use Cases:
     * UC1 - Investiční analýza
     * UC2 - Credit risk scoring
@@ -25,13 +24,6 @@ servers:
     catalog: vse_banka
     schema: investment_banking
     table: dp_investment_corporate_snapshot
-  DEVELOPMENT:
-    type: databricks
-    host: nova-banka-dev.cloud.databricks.com
-    environment: development
-    catalog: vse_banka
-    schema: investment_banking
-    table: dp_investment_corporate_snapshot
 
 schema:
   - name: dp_investment_corporate_snapshot
@@ -39,11 +31,11 @@ schema:
     fields:
       - name: company_id
         type: string
-        description: Unikátní identifikátor společnosti (IČO nebo LEI)
+        description: Unikátní identifikátor společnosti
         required: true
       - name: company_name
         type: string
-        description: Oficální název společnosti
+        description: Oficiální název společnosti
         required: true
       - name: nace_code
         type: string
@@ -76,92 +68,6 @@ quality:
   - rule: not_null
     field: nace_code
     description: NACE kód nesmí být prázdný
-
-sla:
-  availability: 99.5%
-  data_latency: D+1
-  retention_period: 60
-cat > team8-investment-banking/investment-peer-benchmark-profile.yaml << 'EOF'
-dataContractSpecification: 1.1.0
-id: urn:businessdomain:nova-banka:investment-banking:investment-peer-benchmark-profile
-
-info:
-  title: DP_INVESTMENT_PEER_BENCHMARK_PROFILE
-  name: Investment Peer Benchmark Profile
-  version: 1.0.0
-  status: active
-  description: |
-    Analytický produkt identifikující statisticky podobné společnosti pomocí clusteringu.
-    Use Cases:
-    * UC1 - Investiční benchmarking
-    * UC2 - Korporátní risk profiling
-  owner: Nova Banka \ Investment Banking \ Tým 8
-  contact:
-    name: Head of Investment Banking
-    email: investment.banking@nova-banka.cz
-
-servers:
-  PRODUCTION:
-    type: databricks
-    host: nova-banka-prod.cloud.databricks.com
-    environment: production
-    catalog: vse_banka
-    schema: investment_banking
-    table: dp_investment_peer_benchmark_profile
-  DEVELOPMENT:
-    type: databricks
-    host: nova-banka-dev.cloud.databricks.com
-    environment: development
-    catalog: vse_banka
-    schema: investment_banking
-    table: dp_investment_peer_benchmark_profile
-
-schema:
-  - name: dp_investment_peer_benchmark_profile
-    description: Peer group přiřazení a benchmark metriky
-    fields:
-      - name: as_of_date
-        type: date
-        description: Business datum pro které je benchmark vypočítán
-        required: true
-      - name: company_id
-        type: string
-        description: Identifikátor korporátní entity
-        required: true
-      - name: peer_group_id
-        type: string
-        description: Identifikátor peer clusteru
-        required: true
-      - name: similarity_score
-        type: decimal
-        description: Skóre podobnosti společnosti k peer group
-        required: true
-      - name: revenue
-        type: decimal
-        description: Tržby
-        required: false
-      - name: ebitda
-        type: decimal
-        description: EBITDA
-        required: false
-      - name: created_at
-        type: timestamp
-        description: Čas vygenerování záznamu
-        required: true
-
-quality:
-  - rule: not_null
-    field: as_of_date
-    description: Datum nesmí být prázdné
-  - rule: not_null
-    field: company_id
-    description: ID společnosti nesmí být prázdné
-  - rule: not_null
-    field: peer_group_id
-    description: ID peer group nesmí být prázdné
-  - rule: range
-    field: similarity_score
-    description: Similarity score musí být 0 až 1
 
 sla:
   availability: 99.5%
