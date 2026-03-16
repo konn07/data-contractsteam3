@@ -1,5 +1,5 @@
 """
-Data Contract Validator - v2
+Data Contract Validator - v3
 Validates all .yml/.yaml data contract files in team folders.
 """
 
@@ -21,6 +21,7 @@ TEAM_FOLDERS = [
 REQUIRED_TOP_LEVEL = ["id", "info", "servers", "schema"]
 REQUIRED_INFO = ["title", "version", "status", "description", "owner"]
 REQUIRED_FIELD_ATTRS = ["name", "type", "description"]
+REQUIRED_SERVER_ATTRS = ["type", "host", "catalog", "schema", "table"]
 VALID_STATUSES = ["draft", "in development", "active", "deprecated"]
 VALID_FIELD_TYPES = [
     "string", "integer", "decimal", "float", "double",
@@ -47,7 +48,7 @@ def validate_contract(path):
     except Exception as e:
         return [f"  ❌ Nelze načíst: {e}"]
 
-    # Top level - jen základní pole
+    # Top level
     for field in REQUIRED_TOP_LEVEL:
         check(errors, field in contract, f"Chybí povinné pole: `{field}`")
 
@@ -66,16 +67,19 @@ def validate_contract(path):
     else:
         errors.append("  ❌ Sekce `info` musí být objekt")
 
-    # Servers
+    # Servers — fix #5: validate required server attributes
     servers = contract.get("servers", {})
     if isinstance(servers, dict) and len(servers) > 0:
         for sname, srv in servers.items():
             if isinstance(srv, dict):
-                check(errors, "type" in srv, f"Server `{sname}` chybí `type`")
+                for attr in REQUIRED_SERVER_ATTRS:
+                    check(errors, attr in srv,
+                          f"Server `{sname}` chybí `{attr}`")
     else:
         errors.append("  ❌ Sekce `servers` musí obsahovat alespoň jeden server")
 
-    # Schema
+    # Schema — fix #2: collect field names for quality cross-check
+    #           fix #4: catch tables with no fields
     schema = contract.get("schema", [])
     all_fields = set()
     if isinstance(schema, list) and len(schema) > 0:
@@ -84,21 +88,26 @@ def validate_contract(path):
                 continue
             tname = table.get("name", "?")
             fields = table.get("fields", [])
+            # fix #4: empty or missing fields list
+            check(errors, isinstance(fields, list) and len(fields) > 0,
+                  f"Tabulka `{tname}` neobsahuje žádná pole (`fields`)")
             if isinstance(fields, list):
                 for field in fields:
                     if isinstance(field, dict):
-                        all_fields.add(field.get("name", ""))
-                        check(errors, "name" in field,
-                              f"Pole v `{tname}` chybí `name`")
-                        check(errors, "type" in field,
-                              f"Pole `{field.get('name','?')}` v `{tname}` chybí `type`")
+                        fname = field.get("name", "")
+                        if fname:
+                            all_fields.add(fname)
+                        # fix #1: enforce all REQUIRED_FIELD_ATTRS (name, type, description)
+                        for attr in REQUIRED_FIELD_ATTRS:
+                            check(errors, attr in field,
+                                  f"Pole `{fname or '?'}` v `{tname}` chybí `{attr}`")
                         ft = field.get("type", "")
                         check(errors, ft in VALID_FIELD_TYPES,
-                              f"Pole `{field.get('name','?')}` má neplatný typ `{ft}` (povolené: {VALID_FIELD_TYPES})")
+                              f"Pole `{fname or '?'}` má neplatný typ `{ft}` (povolené: {VALID_FIELD_TYPES})")
     else:
         errors.append("  ❌ Sekce `schema` musí obsahovat alespoň jednu tabulku")
 
-    # Quality - volitelná sekce, ale pokud existuje, validujeme
+    # Quality — fix #3: cross-check rule.field against collected schema fields
     quality = contract.get("quality", [])
     if isinstance(quality, list) and len(quality) > 0:
         for rule in quality:
@@ -108,6 +117,11 @@ def validate_contract(path):
                 rt = rule.get("rule", "")
                 check(errors, rt in VALID_QUALITY_RULES,
                       f"Neplatný quality rule `{rt}` (povolené: {VALID_QUALITY_RULES})")
+                # fix #3: referenced field must exist in schema
+                rf = rule.get("field", "")
+                if rf and all_fields:
+                    check(errors, rf in all_fields,
+                          f"Quality rule odkazuje na neexistující pole `{rf}` (dostupná pole: {sorted(all_fields)})")
 
     return errors
 
@@ -119,7 +133,7 @@ def main():
     failed_files = []
 
     print("\n" + "=" * 60)
-    print("  DATA CONTRACT VALIDATOR v2")
+    print("  DATA CONTRACT VALIDATOR v3")
     print("=" * 60)
 
     for team_folder in TEAM_FOLDERS:
@@ -154,14 +168,15 @@ def main():
                 ok = f"\n✅ {label} OK"
                 print(ok); report_lines.append(ok)
 
+    passed = total_files - len(failed_files)
     summary = f"""
 {"=" * 60}
-VÝSLEDEK VALIDACE v2
+VÝSLEDEK VALIDACE v3
 {"=" * 60}
-Celkem souborů:  {total_files}
-Bez chyb:        {total_files - len(failed_files)}
-S chybami:       {len(failed_files)}
-Celkem chyb:     {total_errors}
+Celkem souborů:       {total_files}
+Souborů bez chyb:     {passed}
+Souborů s chybami:    {len(failed_files)}
+Celkem chyb:          {total_errors}  (v {len(failed_files)} souborech)
 {"=" * 60}
 """
     print(summary); report_lines.append(summary)
