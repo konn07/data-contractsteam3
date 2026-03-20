@@ -1,5 +1,5 @@
 """
-Data Contract Validator - v3
+Data Contract Validator - v4
 Validates all .yml/.yaml data contract files in team folders.
 """
 
@@ -31,6 +31,8 @@ VALID_QUALITY_RULES = [
     "not_null", "unique", "accepted_values",
     "min_value", "max_value", "regex", "row_count", "range"
 ]
+VALID_SENSITIVITIES = ["Internal", "Confidential", "Public", "Restricted"]
+VALID_LEGAL_BASES = ["Contractual", "Consent", "Legal Obligation"]
 
 def check(errors, condition, message):
     if not condition:
@@ -104,6 +106,23 @@ def validate_contract(path):
                         ft = field.get("type", "")
                         check(errors, ft in VALID_FIELD_TYPES,
                               f"Pole `{fname or '?'}` má neplatný typ `{ft}` (povolené: {VALID_FIELD_TYPES})")
+                        # v4: x-compliance required on every field
+                        xc = field.get("x-compliance")
+                        check(errors, xc is not None,
+                              f"Pole `{fname or '?'}` v `{tname}` chybí sekce `x-compliance`")
+                        if isinstance(xc, dict):
+                            check(errors, "is_pii" in xc,
+                                  f"Pole `{fname or '?'}` — `x-compliance` chybí `is_pii`")
+                            check(errors, "sensitivity" in xc,
+                                  f"Pole `{fname or '?'}` — `x-compliance` chybí `sensitivity`")
+                            sens = xc.get("sensitivity", "")
+                            if sens:
+                                check(errors, sens in VALID_SENSITIVITIES,
+                                      f"Pole `{fname or '?'}` — `sensitivity` musí být jeden z {VALID_SENSITIVITIES} (aktuálně: '{sens}')")
+                            if xc.get("is_pii") is True:
+                                lb = xc.get("legal_basis", "")
+                                check(errors, lb in VALID_LEGAL_BASES,
+                                      f"Pole `{fname or '?'}` je PII — `legal_basis` musí být jeden z {VALID_LEGAL_BASES} (aktuálně: '{lb}')")
     else:
         errors.append("  ❌ Sekce `schema` musí obsahovat alespoň jednu tabulku")
 
@@ -113,15 +132,20 @@ def validate_contract(path):
         for rule in quality:
             if isinstance(rule, dict):
                 check(errors, "rule" in rule, "Quality pravidlo chybí `rule`")
-                check(errors, "field" in rule, "Quality pravidlo chybí `field`")
                 rt = rule.get("rule", "")
                 check(errors, rt in VALID_QUALITY_RULES,
                       f"Neplatný quality rule `{rt}` (povolené: {VALID_QUALITY_RULES})")
-                # fix #3: referenced field must exist in schema
-                rf = rule.get("field", "")
-                if rf and all_fields:
-                    check(errors, rf in all_fields,
-                          f"Quality rule odkazuje na neexistující pole `{rf}` (dostupná pole: {sorted(all_fields)})")
+                if rt == "row_count":
+                    # v4: row_count is table-level — no field required, but min or max must be set
+                    check(errors, "min" in rule or "max" in rule,
+                          "Quality rule `row_count` musí mít `min` nebo `max`")
+                else:
+                    # all other rules must reference a field
+                    check(errors, "field" in rule, f"Quality pravidlo `{rt}` chybí `field`")
+                    rf = rule.get("field", "")
+                    if rf and all_fields:
+                        check(errors, rf in all_fields,
+                              f"Quality rule odkazuje na neexistující pole `{rf}` (dostupná pole: {sorted(all_fields)})")
 
     return errors
 
@@ -133,7 +157,7 @@ def main():
     failed_files = []
 
     print("\n" + "=" * 60)
-    print("  DATA CONTRACT VALIDATOR v3")
+    print("  DATA CONTRACT VALIDATOR v4")
     print("=" * 60)
 
     for team_folder in TEAM_FOLDERS:
@@ -171,7 +195,7 @@ def main():
     passed = total_files - len(failed_files)
     summary = f"""
 {"=" * 60}
-VÝSLEDEK VALIDACE v3
+VÝSLEDEK VALIDACE v4
 {"=" * 60}
 Celkem souborů:       {total_files}
 Souborů bez chyb:     {passed}

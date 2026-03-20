@@ -1,23 +1,29 @@
 dataContractSpecification: 1.1.0
 id: urn:businessdomain:nova-banka:esg-risk:esg-risk-energy-profile
-
 info:
   title: DP_ESG_RISK_ENERGY_PROFILE
   name: ESG Risk Energy Profile
   version: 1.0.0
   status: in development
-  description: |
-    Automatizace odhadu energetické náročnosti budov pro účely valuace a reportingu.
-    Na základě GPS lokace se vypočítá hodnota energetického štítku pro schvalování úvěru.
+  description: 'Automatizace odhadu energetické náročnosti budov pro účely valuace
+    a reportingu.
+
+    Na základě GPS lokace se vypočítá hodnota energetického štítku pro schvalování
+    úvěru.
+
     Data latency: denní aktualizace
+
     Use Cases:
+
     * UC1 - Odhad energetického štítku pro schvalování úvěru
+
     * UC2 - EU Taxonomie reporting
+
+    '
   owner: Nova Banka \ Risk \ ESG Tým 5
   contact:
     name: ESG Owner
     email: martin.hanus@bank.cz
-
 servers:
   PRODUCTION:
     type: databricks
@@ -33,48 +39,67 @@ servers:
     catalog: vse_banka
     schema: esg_risk
     table: dp_esg_risk_energy_profile
-
 schema:
-  - name: dp_esg_risk_energy_profile
-    description: Odhadované parametry energetické náročnosti na úrovni budovy
-    fields:
-      - name: building_id
-        type: string
-        description: Unikátní identifikátor budovy z Katastru nemovitostí
-        required: true
-        unique: true
-      - name: gps_latitude
-        type: decimal
-        description: Zeměpisná šířka budovy
-        required: true
-      - name: gps_longitude
-        type: decimal
-        description: Zeměpisná délka budovy
-        required: true
-      - name: energy_label_estimated
-        type: string
-        description: Odhadovaná energetická třída (A až G)
-        required: true
-      - name: created_at
-        type: timestamp
-        description: Čas vygenerování záznamu
-        required: true
-
+- name: dp_esg_risk_energy_profile
+  description: Odhadované parametry energetické náročnosti na úrovni budovy
+  fields:
+  - name: building_id
+    type: string
+    description: Unikátní identifikátor budovy z Katastru nemovitostí
+    required: true
+    unique: true
+    x-compliance:
+      is_pii: false
+      sensitivity: Internal
+  - name: gps_latitude
+    type: decimal
+    description: Zeměpisná šířka budovy
+    required: true
+    x-compliance:
+      is_pii: false
+      sensitivity: Internal
+  - name: gps_longitude
+    type: decimal
+    description: Zeměpisná délka budovy
+    required: true
+    x-compliance:
+      is_pii: false
+      sensitivity: Internal
+  - name: energy_label_estimated
+    type: string
+    description: Odhadovaná energetická třída (A až G)
+    required: true
+    x-compliance:
+      is_pii: false
+      sensitivity: Internal
+  - name: created_at
+    type: timestamp
+    description: Čas vygenerování záznamu
+    required: true
+    x-compliance:
+      is_pii: false
+      sensitivity: Internal
 quality:
-  - rule: not_null
-    field: building_id
-    description: ID budovy nesmí být prázdné
-  - rule: unique
-    field: building_id
-    description: Každá budova musí mít unikátní ID
-  - rule: not_null
-    field: energy_label_estimated
-    description: Energetická třída nesmí být prázdná
-  - rule: accepted_values
-    field: energy_label_estimated
-    values: [A, B, C, D, E, F, G]
-    description: Energetická třída musí být A až G
-
+- rule: not_null
+  field: building_id
+  description: ID budovy nesmí být prázdné
+- rule: unique
+  field: building_id
+  description: Každá budova musí mít unikátní ID
+- rule: not_null
+  field: energy_label_estimated
+  description: Energetická třída nesmí být prázdná
+- rule: accepted_values
+  field: energy_label_estimated
+  values:
+  - A
+  - B
+  - C
+  - D
+  - E
+  - F
+  - G
+  description: Energetická třída musí být A až G
 sla:
   availability: 99.0%
   data_latency: D+1

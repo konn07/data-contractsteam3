@@ -1,22 +1,25 @@
 dataContractSpecification: 1.1.0
 id: urn:businessdomain:nova-banka:esg-risk:esg-risk-score-profile
-
 info:
   title: DP_ESG_RISK_SCORE_PROFILE
   name: ESG Risk Score Profile
   version: 1.0.0
   status: in development
-  description: |
-    Zpřesnění valuace nemovitostí a zrychlení úvěrového procesu.
+  description: 'Zpřesnění valuace nemovitostí a zrychlení úvěrového procesu.
+
     Výpočet ESG skóre pro schvalování úvěrů a ocenění zajištění.
+
     Use Cases:
+
     * UC1 - Schvalování úvěrů
+
     * UC2 - Regulatory compliance (ČNB, EU)
+
+    '
   owner: Nova Banka \ Risk \ ESG Tým 5
   contact:
     name: ESG Owner
     email: martin.hanus@bank.cz
-
 servers:
   PRODUCTION:
     type: databricks
@@ -32,47 +35,59 @@ servers:
     catalog: vse_banka
     schema: esg_risk
     table: dp_esg_risk_score_profile
-
 schema:
-  - name: dp_esg_risk_score_profile
-    description: Aktuální ESG skóre na úrovni budovy
-    fields:
-      - name: building_id
-        type: string
-        description: Unikátní identifikátor budovy z Katastru nemovitostí
-        required: true
-        unique: true
-      - name: gps_latitude
-        type: decimal
-        description: Zeměpisná šířka budovy
-        required: true
-      - name: gps_longitude
-        type: decimal
-        description: Zeměpisná délka budovy
-        required: true
-      - name: esg_overall_score
-        type: decimal
-        description: Výsledné ESG skóre (0-100)
-        required: true
-      - name: created_at
-        type: timestamp
-        description: Čas vygenerování záznamu
-        required: true
-
+- name: dp_esg_risk_score_profile
+  description: Aktuální ESG skóre na úrovni budovy
+  fields:
+  - name: building_id
+    type: string
+    description: Unikátní identifikátor budovy z Katastru nemovitostí
+    required: true
+    unique: true
+    x-compliance:
+      is_pii: false
+      sensitivity: Internal
+  - name: gps_latitude
+    type: decimal
+    description: Zeměpisná šířka budovy
+    required: true
+    x-compliance:
+      is_pii: false
+      sensitivity: Internal
+  - name: gps_longitude
+    type: decimal
+    description: Zeměpisná délka budovy
+    required: true
+    x-compliance:
+      is_pii: false
+      sensitivity: Internal
+  - name: esg_overall_score
+    type: decimal
+    description: Výsledné ESG skóre (0-100)
+    required: true
+    x-compliance:
+      is_pii: false
+      sensitivity: Internal
+  - name: created_at
+    type: timestamp
+    description: Čas vygenerování záznamu
+    required: true
+    x-compliance:
+      is_pii: false
+      sensitivity: Internal
 quality:
-  - rule: not_null
-    field: building_id
-    description: ID budovy nesmí být prázdné
-  - rule: unique
-    field: building_id
-    description: Každá budova musí mít unikátní ID
-  - rule: not_null
-    field: esg_overall_score
-    description: ESG skóre nesmí být prázdné
-  - rule: range
-    field: esg_overall_score
-    description: ESG skóre musí být v intervalu 0 až 100
-
+- rule: not_null
+  field: building_id
+  description: ID budovy nesmí být prázdné
+- rule: unique
+  field: building_id
+  description: Každá budova musí mít unikátní ID
+- rule: not_null
+  field: esg_overall_score
+  description: ESG skóre nesmí být prázdné
+- rule: range
+  field: esg_overall_score
+  description: ESG skóre musí být v intervalu 0 až 100
 sla:
   availability: 99.0%
   data_latency: D+1

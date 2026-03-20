@@ -1,22 +1,25 @@
 dataContractSpecification: 1.1.0
 id: urn:businessdomain:nova-banka:strategy:strategy-kpi-aggregation
-
 info:
   title: DP_STRATEGY_KPI_AGGREGATION
   name: Strategy KPI Aggregation
   version: 1.0.0
   status: in development
-  description: |
-    Agregovaný datový produkt obsahující klíčové strategické metriky banky.
+  description: 'Agregovaný datový produkt obsahující klíčové strategické metriky banky.
+
     Měření ambice anticipativního bankovnictví.
+
     Use Cases:
+
     * UC1 - Strategický reporting pro C-level
+
     * UC2 - Sledování NPS a automatizace
+
+    '
   owner: Nova Banka \ Strategy \ Tým 6
   contact:
     name: Strategy Team
     email: strategy@nova-banka.cz
-
 servers:
   PRODUCTION:
     type: databricks
@@ -32,43 +35,55 @@ servers:
     catalog: vse_banka
     schema: strategie
     table: dp_strategy_kpi_aggregation
-
 schema:
-  - name: dp_strategy_kpi_aggregation
-    description: Klíčové strategické metriky banky
-    fields:
-      - name: report_date
-        type: date
-        description: Referenční datum reportingu
-        required: true
-      - name: nps_score
-        type: decimal
-        description: Net Promoter Score
-        required: false
-      - name: cost_to_serve
-        type: decimal
-        description: Průměrné náklady na obsluhu klienta
-        required: false
-      - name: automated_resolution_rate
-        type: decimal
-        description: Podíl požadavků vyřešených AI bez zásahu člověka
-        required: false
-      - name: created_at
-        type: timestamp
-        description: Čas vygenerování záznamu
-        required: true
-
+- name: dp_strategy_kpi_aggregation
+  description: Klíčové strategické metriky banky
+  fields:
+  - name: report_date
+    type: date
+    description: Referenční datum reportingu
+    required: true
+    x-compliance:
+      is_pii: false
+      sensitivity: Internal
+  - name: nps_score
+    type: decimal
+    description: Net Promoter Score
+    required: false
+    x-compliance:
+      is_pii: false
+      sensitivity: Internal
+  - name: cost_to_serve
+    type: decimal
+    description: Průměrné náklady na obsluhu klienta
+    required: false
+    x-compliance:
+      is_pii: false
+      sensitivity: Internal
+  - name: automated_resolution_rate
+    type: decimal
+    description: Podíl požadavků vyřešených AI bez zásahu člověka
+    required: false
+    x-compliance:
+      is_pii: false
+      sensitivity: Internal
+  - name: created_at
+    type: timestamp
+    description: Čas vygenerování záznamu
+    required: true
+    x-compliance:
+      is_pii: false
+      sensitivity: Internal
 quality:
-  - rule: not_null
-    field: report_date
-    description: Datum reportingu nesmí být prázdné
-  - rule: range
-    field: nps_score
-    description: NPS musí být v intervalu -100 až 100
-  - rule: range
-    field: automated_resolution_rate
-    description: ARR musí být v intervalu 0 až 1
-
+- rule: not_null
+  field: report_date
+  description: Datum reportingu nesmí být prázdné
+- rule: range
+  field: nps_score
+  description: NPS musí být v intervalu -100 až 100
+- rule: range
+  field: automated_resolution_rate
+  description: ARR musí být v intervalu 0 až 1
 sla:
   availability: 99.5%
   data_latency: D+1
