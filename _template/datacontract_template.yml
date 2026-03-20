@@ -66,9 +66,9 @@
 # │                          │   .dawiso_status             │
 # │ Tags                     │ x-dawiso.data_product.tags   │
 # │ SLA                      │ sla                          │
-# │ Input Contracts          │ x-dawiso.data_product        │
+# │ Lineage (upstream)       │ x-dawiso.data_product        │
 # │                          │   .lineage.upstream          │
-# │ Output Contracts         │ x-dawiso.data_product        │
+# │ Lineage (downstream)     │ x-dawiso.data_product        │
 # │                          │   .lineage.downstream        │
 # │ Data Contract (link)     │ id (URN)                     │
 # ├──────────────────────────┼──────────────────────────────┤
@@ -309,20 +309,33 @@ servicelevels:
     description: "<Time from source event to product availability.>"
 
 # ============================================================
-# DAWISO INTEGRATION
-# Provides all metadata required to publish this contract as:
-#   (A) a Data Product entry in Dawiso
-#   (B) a Business Glossary entry in Dawiso (FIBO-aligned)
+# DAWISO INTEGRATION  (manual entry — no API)
+# ============================================================
+#
+# HOW TO USE:
+#   After committing this contract, manually enter the metadata
+#   below into Dawiso in two steps:
+#
+#   STEP 1 — Data Product card
+#     Dawiso > Data Catalog > Data Products > + New Product
+#     Copy: name, description, domain, owners, status, tags,
+#           lineage, KO rules, retention
+#
+#   STEP 2 — Business Glossary entry  (done by Data Steward)
+#     Dawiso > Business Glossary > + New Term
+#     Copy: term, definition, FIBO class, domain, steward,
+#           synonyms, related capability
+#
 # ============================================================
 x-dawiso:
 
   # ──────────────────────────────────────────────────────────
-  # (A) DAWISO DATA PRODUCT
-  # Maps to: Dawiso > Data Products > [New Product]
+  # STEP 1 · DAWISO DATA PRODUCT
+  # Dawiso > Data Catalog > Data Products > + New Product
   # ──────────────────────────────────────────────────────────
   data_product:
 
-    # Workflow status in Dawiso lifecycle
+    # Workflow status
     # Contract status  → Dawiso status
     # draft            → design
     # in development   → in_development
@@ -330,12 +343,12 @@ x-dawiso:
     # deprecated       → obsolete
     dawiso_status: design        # design | in_development | published | obsolete
 
-    # Domain from controlled vocabulary — governs where the product appears in Dawiso
+    # Domain — controlled vocabulary; governs placement in Dawiso
     # ESG Risk | Credit Risk | Investment | Retail Sales |
     # Customer Service | Accounting | Strategy
     domain: <Domain>
 
-    # Roles — map to Dawiso user/group names
+    # Roles — enter as Dawiso user/group names
     business_owner: <Role title, e.g. Head of Retail Sales>
     product_owner: <Full Name — email@nova-banka.cz>
     data_steward: <Full Name — email@nova-banka.cz>
@@ -346,29 +359,23 @@ x-dawiso:
       - <product-type-tag>  # e.g. event-data
       - <topic-tag>         # e.g. customer-acquisition
 
-    # Classification — appears in Dawiso data product card
+    # Classification — Dawiso data product card
     # Operational | Analytical | Source-aligned | Consumer-aligned
     classification: "<Classification> Data Product"
-
-    # Access — maps to Dawiso permissions / access control settings
-    access_control: "<Role-based: which roles may read / write / delete.>"
     data_classification: Internal  # Public | Internal | Confidential | Restricted
 
-    # Lineage — maps to Dawiso Input/Output Contracts
+    # Lineage — enter source/consumer names as shown in Dawiso UI
     lineage:
       upstream:
         - name: "<Source system name>"
           type: internal-system    # internal-system | external-registry | data-product
-          owner: "<Owning team>"
-          description: "<What this source contributes to this product>"
-          dawiso_contract_id: "<URN or Dawiso object ID if the source is itself a Data Contract>"
+          description: "<What this source contributes>"
       downstream:
-        - name: "<Consuming product, report, or system>"
+        - name: "<Consuming system, report, or product>"
           type: data-product       # data-product | report | api | ml-model | dashboard
-          id: "urn:businessdomain:nova-banka:<domain>:<name>"
           description: "<How this downstream system uses the product>"
 
-    # KO rules — critical gates; failure blocks processing
+    # KO rules — critical gates shown on Dawiso governance card
     rules_ko:
       - "<KO rule 1 — e.g. record_id must be a valid UUID v4>"
       - "<KO rule 2 — e.g. business_date must not be in the future>"
@@ -376,75 +383,55 @@ x-dawiso:
     # Retention — for Dawiso governance card
     retention:
       period: "<e.g. 36 months>"
-      rationale: "<Business or regulatory rationale — cite regulation if applicable>"
-
-    # Access channels — appears in Dawiso delivery section
-    access_channels:
-      - "<Channel 1, e.g. Nova Banka Internal Data Catalog>"
-      - "<Channel 2, e.g. Databricks SQL Warehouse>"
+      rationale: "<Business or regulatory rationale>"
 
   # ──────────────────────────────────────────────────────────
-  # (B) DAWISO BUSINESS GLOSSARY ENTRY  (FIBO-aligned)
-  # Maps to: Dawiso > Business Glossary > [New Term]
-  # Naming: [Domain] [FIBO Class Name] : [Business Term Name]
+  # STEP 2 · DAWISO BUSINESS GLOSSARY  (FIBO-aligned)
+  # Dawiso > Business Glossary > + New Term
+  # Done by: Data Steward (data_steward field above)
   # ──────────────────────────────────────────────────────────
   glossary_entry:
 
     # Term name = [Domain] [Business Term]
-    # e.g. "Retail Sales Customer", "Accounting GL Account", "Credit Risk Credit Memo"
+    # e.g. "Retail Sales Customer", "Accounting GL Account"
     term: "<Domain> <Business Term>"
 
-    # One clear English sentence — the business essence, not technical implementation
-    # Avoid: SQL / API / Table / ETL / pipeline
+    # One English sentence — business essence, not technical detail
+    # Avoid: SQL / API / table / ETL / pipeline
     definition: "<One English sentence describing what this concept means to the business.>"
 
-    # FIBO alignment
-    # ─────────────────────────────────────────────────────
-    # FIBO alignment reference table:
-    #   Company / Legal Entity   → fibo-be-le-lp:LegalEntity
-    #   Customer / Party         → fibo-fnd-pty-pty:Party
-    #   Account                  → fibo-fbc-pas-caa:Account
-    #   Account Balance          → fibo-fbc-pas-caa:AccountBalance
-    #   Market Rate              → fibo-fnd-acc-cur:MarketRate
-    #   Credit Memo / Application→ fibo-fbc-da-da:LoanApplication
-    #   Collateral               → fibo-fbc-da-da:Collateral
-    #   Risk Score / Rating      → fibo-fnd-arr-asmt:RatingScore
-    #   GL Account               → schema:FinancialProduct (no FIBO exact match)
-    #   Investment               → fibo-sec-sec-lst:ListedSecurity (nearest)
-    #   ESG Risk                 → fibo-fnd-arr-asmt:Assessment (nearest)
-    #   KPI / Metric             → fibo-fnd-gao-obj:BusinessObjective (nearest)
-    # ─────────────────────────────────────────────────────
+    # FIBO alignment reference:
+    #   Company / Legal Entity    → fibo-be-le-lp:LegalEntity
+    #   Customer / Party          → fibo-fnd-pty-pty:Party
+    #   Account                   → fibo-fbc-pas-caa:Account
+    #   Account Balance           → fibo-fbc-pas-caa:AccountBalance
+    #   Market Rate               → fibo-fnd-acc-cur:MarketRate
+    #   Credit Memo / Application → fibo-fbc-da-da:LoanApplication
+    #   Collateral                → fibo-fbc-da-da:Collateral
+    #   Risk Score / Rating       → fibo-fnd-arr-asmt:RatingScore
+    #   GL Account                → schema:FinancialProduct (no FIBO exact)
+    #   Investment                → fibo-sec-sec-lst:ListedSecurity (nearest)
+    #   ESG Risk                  → fibo-fnd-arr-asmt:Assessment (nearest)
+    #   KPI / Metric              → fibo-fnd-gao-obj:BusinessObjective (nearest)
     fibo_class: "<fibo-module:ClassName>"
     fibo_uri: "<https://spec.edmcouncil.org/fibo/ontology/...>"
 
-    # Domain from controlled vocabulary (same as data_product.domain)
     domain: <Domain>
-
-    # Dawiso glossary lifecycle status
     dawiso_status: draft       # draft | in_review | approved | published
-
-    # Steward — person responsible for definition in Dawiso
     steward: "<Full Name — email@nova-banka.cz>"
 
-    # Synonyms — Czech and English variants that auto-link in Dawiso
-    # Ensures Czech source terms in contracts map to approved English term
+    # Synonyms — Czech + English variants; Dawiso auto-links these to the term
     synonyms:
       - "<Czech synonym, e.g. Zákazník>"
       - "<English variant, e.g. Client>"
 
-    # Acronyms shown in Dawiso term card
     acronyms:
-      - "<Acronym, e.g. GL, KPI, CBS>"
+      - "<Acronym, e.g. GL, KPI>"
 
-    # Capability Map — Level 2 or 3 name from Nova Banka Capability Map
-    # Used for Knowledge Graph relationship in Dawiso
+    # Capability Map — Level 2/3 name from Nova Banka Capability Map
     related_capability: "<Capability name, e.g. Credit Underwriting>"
 
-    # Knowledge Graph triple — published to Dawiso and ontology layer
-    # Format: "<Term> --(relationship)--> <Target>"
-    knowledge_graph_triple: "<Business Term> --(is_governed_by)--> <Domain Capability>"
-
-    # Related glossary terms — link to other Dawiso terms by URN or name
+    # Related terms — link by name as they appear in Dawiso Glossary
     related_terms:
       - "<Related Term 1>"
       - "<Related Term 2>"
