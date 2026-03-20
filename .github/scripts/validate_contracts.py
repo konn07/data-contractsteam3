@@ -39,15 +39,6 @@ VALID_SENSITIVITIES = ["Internal", "Confidential", "Public", "Restricted"]
 VALID_LEGAL_BASES = ["Contractual", "Consent", "Legal Obligation"]
 VALID_REGULATORY_FRAMEWORKS = ["GDPR", "BCBS 239", "IFRS 9", "AML", "MiFID II", "None"]
 
-REQUIRED_DATA_PRODUCT_ATTRS = [
-    "dawiso_status", "domain", "business_owner", "product_owner",
-    "data_steward", "classification", "data_classification"
-]
-REQUIRED_GLOSSARY_ATTRS = [
-    "term", "definition", "fibo_class", "domain", "dawiso_status", "steward"
-]
-VALID_DAWISO_DP_STATUSES = ["design", "in_development", "published", "obsolete"]
-VALID_DAWISO_GL_STATUSES = ["draft", "in_review", "approved", "published"]
 
 
 def check(errors, condition, message):
@@ -191,37 +182,8 @@ def validate_contract(path):
     check(errors, has_row_count,
           "Chybí povinný quality rule `row_count` (detekce distribučních anomálií)")
 
-    # ── x-dawiso ─────────────────────────────────────────────
-    # v5: x-dawiso with data_product + glossary_entry required
-    xd = contract.get("x-dawiso")
-    check(errors, isinstance(xd, dict),
-          "Chybí sekce `x-dawiso` (povinná pro Dawiso integraci)")
-    if isinstance(xd, dict):
-        # data_product
-        dp = xd.get("data_product")
-        check(errors, isinstance(dp, dict),
-              "`x-dawiso.data_product` chybí nebo není objekt")
-        if isinstance(dp, dict):
-            for attr in REQUIRED_DATA_PRODUCT_ATTRS:
-                check(errors, attr in dp,
-                      f"`x-dawiso.data_product` chybí `{attr}`")
-            ds = dp.get("dawiso_status", "")
-            check(errors, ds in VALID_DAWISO_DP_STATUSES,
-                  f"`x-dawiso.data_product.dawiso_status` musí být jeden z "
-                  f"{VALID_DAWISO_DP_STATUSES} (aktuálně: '{ds}')")
-
-        # glossary_entry
-        ge = xd.get("glossary_entry")
-        check(errors, isinstance(ge, dict),
-              "`x-dawiso.glossary_entry` chybí nebo není objekt")
-        if isinstance(ge, dict):
-            for attr in REQUIRED_GLOSSARY_ATTRS:
-                check(errors, attr in ge,
-                      f"`x-dawiso.glossary_entry` chybí `{attr}`")
-            gs = ge.get("dawiso_status", "")
-            check(errors, gs in VALID_DAWISO_GL_STATUSES,
-                  f"`x-dawiso.glossary_entry.dawiso_status` musí být jeden z "
-                  f"{VALID_DAWISO_GL_STATUSES} (aktuálně: '{gs}')")
+    # x-dawiso je volitelná sekce (metadata pro ruční vložení do Dawiso)
+    # CI ji nevaliduje — týmy ji vyplňují podle šablony, ale není blocker pro merge
 
     return errors
 
