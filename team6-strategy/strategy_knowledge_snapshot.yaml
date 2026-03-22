@@ -181,10 +181,10 @@ quality:
   - rule: not_null
     field: page_number
 
-  - rule: no_duplicates
+  - rule: unique
     field: chunk_id
     description: "žádné duplicitní chunky"
-
+    
 sla:
   availability: 99.5%
   data_latency: "On-demand — báze se aktualizuje manuálně při vydání nového strategického dokumentu, bez pravidelného rozvrhu."
