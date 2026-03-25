@@ -1,5 +1,5 @@
 dataContractSpecification: 1.1.0
-id: urn:businessdomain:nova-banka:strategy:strategy-kpi-aggregation
+id: urn:businessdomain:nova-banka:strategy:market-rate-snapshot
 info:
   title: DP_STRATEGY_MARKET_RATE_SNAPSHOT
   name: Strategy Market Rate Snapshot
