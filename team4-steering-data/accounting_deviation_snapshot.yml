@@ -1,26 +1,30 @@
 dataContractSpecification: 1.1.0
-id: urn:datacontract:nova-banka:accounting:gl-deviation-snapshot-state:0.1.0
+id: urn:horizon:accounting:deviation-snapshot
 info:
 title: Accounting Deviation Snapshot
-name: Accounting GL Deviation Snapshot STATE
+name: Accounting Deviation Snapshot
 product\_type: STATE
 maturity\_score: 30%
 version: 0.1.0
 status: draft
 description: |
-Datový produkt slouží k vyřešení deviací mezi zůstatky hlavní knihy (GL) a klientskými daty. Zajišťuje bezchybný reporting mateřské společnosti, včasnou detekci chyb a důvěryhodnost finančních výkazů.
-Data latency: T+1
-Business Entity: General Ledger Account
-Business Purpose: Reconciliation of GL and client data for Head Office reporting
-Consumers: Head Office (matka), Data Stewardi, Účetnictví
-Data Sources: Transakční systémy, Tým 3: Obsluha klienta
+Resolves deviations between the general ledger (GL) and client data. Ensures error-free reporting to the parent company, early error detection, and maintains the credibility of financial statements.
+Data latency: Monthly
+Business Entity: Accounting
+Business Purpose: General Ledger to Client Data Reconciliation and Head Office Reporting
+Consumers: Head Office (Parent Company), Data Stewards, Accounting
+Data Sources: Transaction systems (Team 3: Client Service), General Ledger
 
 x-regulatory:
 gdpr\_relevant: false
 critical\_data\_element: true
-regulatory\_framework: "IFRS 9"
+regulatory\_framework: "BCBS 239"
+\# NEW v3.3 — Extended GDPR fields
+data\_minimization: "true"
+right\_to\_erasure: "false"
+purpose\_limitation: "true"
 
-owner: Nova Banka \\ Team 4: Steering Data \\ Accounting
+owner: Horizon AI Bank \\ Team 4 \\ Accounting
 contact:
 name: Josef Kuník
 email: josef.kunik@nova-banka.cz
@@ -32,20 +36,21 @@ host: nova-banka-prod.cloud.databricks.com
 environment: production
 catalog: datamesh-nova-banka-prod
 schema: accounting-prod
-table: gl\_deviation\_snapshot
+table: accounting\_deviation\_snapshot
 DEVELOPMENT:
 type: databricks
 host: nova-banka-dev.cloud.databricks.com
 environment: development
 catalog: datamesh-nova-banka-dev
 schema: accounting-dev
-table: gl\_deviation\_snapshot
+table: accounting\_deviation\_snapshot
 
 schema:
 
-  - name: gl\_deviation\_snapshot
-    description: Snapshot of GL account balances and calculated deviations in CZK
+  - name: accounting\_deviation\_snapshot
+    description: Snapshot of financial deviations mapped by GCOA (Group Chart of Accounts) in CZK.
     fields:
+
       - name: record\_id
         type: string
         description: Unique record identifier (UUID v4)
@@ -55,6 +60,10 @@ schema:
         is\_pii: false
         sensitivity: Internal
 
+        # NEW v3.3 — regulatory justification for this field's existence
+
+        regulatory\_basis: "Internal governance — surrogate key for audit traceability"
+
       - name: business\_date
         type: date
         description: Business processing date (YYYY-MM-DD)
@@ -62,6 +71,7 @@ schema:
         x-compliance:
         is\_pii: false
         sensitivity: Internal
+        regulatory\_basis: "BCBS 239 — timeliness of risk data reporting"
 
       - name: region
         type: string
@@ -71,99 +81,113 @@ schema:
         x-compliance:
         is\_pii: false
         sensitivity: Internal
+        regulatory\_basis: "Internal governance — geographic partitioning"
 
-      - name: GLBAL\_DATE
+    # \--- Business fields with Compliance tags ---
+
+      - name: glbal\_date
         type: date
-        description: General Ledger balance date
+        description: General Ledger Balance Date
         required: true
         x-compliance:
         is\_pii: false
         sensitivity: Internal
+        regulatory\_basis: "BCBS 239 — accurate risk aggregation and reporting timeliness"
 
-      - name: DOM\_GCOA
+      - name: dom\_gcoa
         type: string
-        description: Global Chart of Accounts (GCOA) account identifier
+        description: Group Chart of Accounts identifier
         required: true
         x-compliance:
         is\_pii: false
         sensitivity: Internal
+        regulatory\_basis: "IFRS 9 — financial mapping and aggregation requirements"
 
-      - name: WORK\_BAL
-        type: double
-        description: Working balance amount
+      - name: work\_bal
+        type: number
+        description: Working Balance
         required: true
         x-compliance:
         is\_pii: false
         sensitivity: Internal
+        regulatory\_basis: "Internal governance — financial reconciliation"
 
-      - name: AVG\_WORK\_BAL
-        type: double
-        description: Average working balance amount
+      - name: avg\_work\_bal
+        type: number
+        description: Average Working Balance
         required: true
         x-compliance:
         is\_pii: false
         sensitivity: Internal
+        regulatory\_basis: "Internal governance — financial reconciliation"
 
-      - name: GLBAL\_AMOUNT\_CZK
-        type: double
-        description: General Ledger balance amount in CZK
+      - name: glbal\_amount\_czk
+        type: number
+        description: General Ledger Balance Amount in CZK
         required: true
         x-compliance:
         is\_pii: false
         sensitivity: Internal
+        regulatory\_basis: "BCBS 239 — financial accuracy"
 
-      - name: AVG\_GLBAL\_AMOUNT\_CZK
-        type: double
-        description: Average General Ledger balance amount in CZK
+      - name: avg\_glbal\_amount\_czk
+        type: number
+        description: Average General Ledger Balance Amount in CZK
         required: true
         x-compliance:
         is\_pii: false
         sensitivity: Internal
+        regulatory\_basis: "BCBS 239 — financial accuracy"
 
-      - name: VD5\_BAL
-        type: double
-        description: VD5 balance amount
+      - name: vd5\_bal
+        type: number
+        description: VD5 Source Balance
         required: true
         x-compliance:
         is\_pii: false
         sensitivity: Internal
+        regulatory\_basis: "Internal governance — source system tracking"
 
-      - name: VD5\_BAL\_AVG
-        type: double
-        description: Average VD5 balance amount
+      - name: vd5\_bal\_avg
+        type: number
+        description: Average VD5 Source Balance
         required: true
         x-compliance:
         is\_pii: false
         sensitivity: Internal
+        regulatory\_basis: "Internal governance — source system tracking"
 
-      - name: DIFF\_BAL\_CALC
-        type: double
-        description: Calculated difference balance
+      - name: diff\_bal\_calc
+        type: number
+        description: Calculated Difference (Deviation) Balance
         required: true
         x-compliance:
         is\_pii: false
         sensitivity: Internal
+        regulatory\_basis: "BCBS 239 — risk and deviation reporting"
 
-      - name: AVG\_DIFF\_BAL\_CALC
-        type: double
-        description: Average calculated difference balance
+      - name: avg\_diff\_bal\_calc
+        type: number
+        description: Calculated Average Difference (Deviation) Balance
         required: true
         x-compliance:
         is\_pii: false
         sensitivity: Internal
+        regulatory\_basis: "BCBS 239 — risk and deviation reporting"
 
 quality:
 
   - rule: not\_null
     field: record\_id
-
   - rule: unique
     field: record\_id
 
+# Distribution & Volume check (Mentor requirement)
+
   - rule: row\_count
-    min: 1000
-    max: 50000
-    description: "Detects data distribution anomalies (volume drop/spike) for GCOA deviation reporting"
+    min: 100
+    max: 15000
+    description: "Detects data distribution anomalies (volume drop/spike) based on expected GCOA account counts"
 
   - rule: accepted\_values
     field: region
@@ -171,7 +195,7 @@ quality:
 
 sla:
 availability: 99.5%
-data\_latency: T+1
+data\_latency: Monthly
 retention\_period: 12 months
 
 x-dawiso:
@@ -180,47 +204,89 @@ dawiso\_status: design
 domain: Accounting
 business\_owner: Head of Accounting
 product\_owner: Josef Kuník - josef.kunik@nova-banka.cz
-data\_steward: Josef Kuník - josef.kunik@nova-banka.cz
+data\_steward: Accounting Data Steward
 tags:
 \- accounting
-\- financial-reporting
 \- state
+\- reconciliation
+\- general-ledger
 classification: "Internal Data Product"
 data\_classification: Internal
 lineage:
 upstream:
-\- name: Transakční systémy
+\- name: Team 3 Transaction Systems
 type: internal-system
-description: "Provides underlying client and transaction level data"
-\- name: Tým 3: Obsluha klienta
-type: data-product
-description: "Provides client service records and aggregated client data balances"
+description: "Provides underlying client transactional balances for comparison"
+\- name: General Ledger System
+type: internal-system
+description: "Provides official GCOA balances"
 downstream:
-\- name: Head Office Reporting Engine
+\- name: Head Office Reporting Platform
 type: data-product
-description: "Consumes deviation data for maternal company financial statement preparation"
+description: "Consumes reconciliation data to generate error-free financial statements for the parent company"
 rules\_ko:
 \- "record\_id must be a valid UUID v4"
-\- "Volume must be within expected range (1000 - 50000)"
-\- "Deviations must map directly to valid DOM\_GCOA accounts"
+\- "Volume must be within expected range"
 retention:
 period: "12 months"
-rationale: "Data is kept for one year to support year-over-year financial reconciliation and audit requirements."
+rationale: "Required to maintain historical deviation tracking for annual financial reporting cycles."
+
+```
+# NEW v3.3 — Regulatory Mapping (mandatory for audit readiness)
+regulatory_mapping:
+  - regulation: BCBS 239
+    status: "Contributes"
+    reason: "Provides accurate, aggregated general ledger data quality metrics to support risk reporting."
+  - regulation: BASEL IV
+    status: "Contributes"
+    reason: "Ensures financial baseline data quality used for capital calculation inputs."
+  - regulation: EBA
+    status: "Contributes"
+    reason: "Supports rigorous data governance, mapping, and ownership over critical financial reconciliations."
+  - regulation: DORA
+    status: "Contributes"
+    reason: "SLA metrics document the availability and resilience of financial reporting inputs."
+  - regulation: AML
+    status: "N/A"
+    reason: "Contains aggregated general ledger balances with no transactional AML/KYC data."
+  - regulation: MiFID II
+    status: "N/A"
+    reason: "Contains no investment transaction reporting or capital markets data."
+  - regulation: PSD2
+    status: "N/A"
+    reason: "Contains no payment services or open banking retail data."
+  - regulation: GDPR
+    status: "N/A"
+    reason: "Product relies entirely on aggregated, non-personal financial accounts; no PII is present."
+  - regulation: AI Act
+    status: "N/A"
+    reason: "This product is an analytical aggregate and not an input/output for AI systems."
+  - regulation: IFRS 9
+    status: "Contributes"
+    reason: "Ensures accuracy of underlying general ledger balances essential for financial reporting and ECL frameworks."
+
+# NEW v3.3 — AI Act / FRIA assessment
+ai_act:
+  is_ai_input: false
+  is_ai_output: false
+  high_risk_classification: false
+  fria_required: false
+  fria_notes: "FRIA is not required as this data product is an analytical reconciliation tool containing aggregated non-personal financial data, independent of AI processing."
+```
 
 glossary\_entry:
-term: "Accounting GL Deviation"
-definition: "A snapshot detailing discrepancies between General Ledger account balances and aggregate client-level data, used to ensure accuracy in financial statements and maternal company reporting."
+term: "Accounting General Ledger Deviation"
+definition: "A recorded snapshot representing the financial deviation between general ledger account balances and underlying client transactional data."
 fibo\_class: "fibo-fnd-acc-aeq:GeneralLedgerAccount"
 fibo\_uri: "[https://spec.edmcouncil.org/fibo/ontology/FND/Accounting/AccountingEquity/GeneralLedgerAccount](https://www.google.com/search?q=https://spec.edmcouncil.org/fibo/ontology/FND/Accounting/AccountingEquity/GeneralLedgerAccount)"
 domain: Accounting
 dawiso\_status: draft
 steward: Josef Kuník - josef.kunik@nova-banka.cz
 synonyms:
-\- Odchylka hlavní knihy
-\- GL Deviace
-acronyms:
-\- GL Deviation
-related\_capability: "Financial Reporting & Reconciliation"
+\- "Odchylka hlavní knihy"
+\- "GL Deviation"
+acronyms: []
+related\_capability: "Financial Reconciliation"
 related\_terms:
 \- "General Ledger Balance"
 \- "Client Account Balance"
