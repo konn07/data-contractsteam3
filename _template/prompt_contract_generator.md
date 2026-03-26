@@ -59,7 +59,7 @@ Fill the YAML template. MANDATORY ADDITIONS:
 3. REGULATORY FRAMEWORK: In the info block, deduce and assign the correct 'Regulatory Framework' (e.g., "GDPR", "BCBS 239", "IFRS 9", or "None") based on the presence of PII or the financial nature of the data.
 
 4. REGULATORY MAPPING: In the x-dawiso block, add a regulatory_mapping section.
-   For each of the 10 standard Nova Banka regulations, assess whether the data product
+   For each of the 10 standard Horizon AI Bank regulations, assess whether the data product
    contributes to, is restricted by, both, or is not applicable, and provide a brief reason.
 
 5. AI ACT: In the x-dawiso block, add an ai_act section.
@@ -101,7 +101,7 @@ info:
     right_to_erasure: "<true/false — does this product support the right to be forgotten?>"
     purpose_limitation: "<true/false — is processing strictly limited to the declared purpose?>"
 
-  owner: Nova Banka \ <TeamN> \ <Domain>
+  owner: Horizon AI Bank \ <TeamN> \ <Domain>
   contact:
     name: <contact name>
     email: <contact email>
